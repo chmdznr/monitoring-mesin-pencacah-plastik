@@ -41,13 +41,13 @@ class PembacaanSensorController extends Controller
             });
 
             $table->editColumn('id', function ($row) {
-                return $row->id ? $row->id : '';
+                return $row->id;
             });
             $table->editColumn('energi', function ($row) {
-                return $row->energi ? $row->energi : '';
+                return $row->energi;
             });
             $table->editColumn('berat', function ($row) {
-                return $row->berat ? $row->berat : '';
+                return $row->berat;
             });
 
             $table->rawColumns(['actions', 'placeholder']);
