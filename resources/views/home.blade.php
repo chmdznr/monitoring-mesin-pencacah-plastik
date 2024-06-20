@@ -15,6 +15,34 @@
                             </div>
                         @endif
 
+                        <!-- New blocks for latest value and anomaly status -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-green" style="display:flex; flex-direction: column; justify-content: center;">
+                                        <i class="fa fa-info-circle"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Latest Value</span>
+                                        <span class="info-box-number" id="latest-value"></span>
+                                        <span id="latest-timestamp" style="font-size: smaller; font-weight: normal;"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-orange" style="display:flex; flex-direction: column; justify-content: center;">
+                                        <i class="fa fa-exclamation-triangle"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Anomaly Status</span>
+                                        <span class="info-box-number" id="anomaly-status"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="{{ $settings2['column_class'] }}">
                                 <div class="info-box">
@@ -90,6 +118,7 @@
                                 </table>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -160,5 +189,23 @@
                 },
             }
         });
+
+        // Function to update the latest value and anomaly status
+        function updateLatestData() {
+            fetch('/api/latest-anomaly')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('latest-value').innerText = `${data.value}`;
+                    document.getElementById('latest-timestamp').innerText = `(${data.created_at})`;
+                    document.getElementById('anomaly-status').innerText = data.is_anomaly ? 'Anomaly Detected' : 'No Anomaly';
+                })
+                .catch(error => console.error('Error fetching latest anomaly data:', error));
+        }
+
+        // Initial fetch
+        updateLatestData();
+
+        // Update every 5 seconds
+        setInterval(updateLatestData, 5000);
     </script>
 @endsection

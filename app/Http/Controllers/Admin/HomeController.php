@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\PembacaanSensor;
+use Illuminate\Support\Facades\Http;
 use LaravelDaily\LaravelCharts\Classes\LaravelChart;
 
 class HomeController
@@ -172,5 +173,13 @@ class HomeController
         $valuesBerat = $latestBeratData->pluck('berat')->toArray();
 
         return view('home', compact('chart4', 'chart5', 'settings1', 'settings2', 'settings3', 'labelsEnergi', 'valuesEnergi', 'labelsBerat', 'valuesBerat'));
+    }
+
+    public function getLatestAnomaly()
+    {
+        $response = Http::post('https://pencacah2024.msvc.app/svc/detect-anomalies');
+        $data = $response->json();
+
+        return response()->json($data);
     }
 }
