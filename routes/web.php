@@ -39,4 +39,6 @@ Route::group(['prefix' => 'profile', 'as' => 'profile.', 'namespace' => 'Auth', 
     }
 });
 
-Route::get('/api/latest-anomaly', [App\Http\Controllers\Admin\HomeController::class, 'getLatestAnomaly']);
+Route::get('/api/latest-anomaly', [App\Http\Controllers\Admin\HomeController::class, 'latestAnomaly']);
+Route::get('/api/latest-data', [App\Http\Controllers\Admin\HomeController::class, 'getLatestData']);
+

@@ -25,7 +25,7 @@
                                     <div class="info-box-content">
                                         <span class="info-box-text">Latest Value</span>
                                         <span class="info-box-number" id="latest-value"></span>
-                                        <span id="latest-timestamp" style="font-size: smaller; font-weight: normal;"></span>
+                                        <span class="info-box-text" id="latest-created-at" style="font-size: 12px; font-weight: normal;"></span>
                                     </div>
                                 </div>
                             </div>
@@ -68,14 +68,14 @@
                                 </div>
                             </div>
 
-                            <div class="{{ $chart4->options['column_class'] }}">
-                                <h3>{!! $chart4->options['chart_title'] !!}</h3>
-                                {!! $chart4->renderHtml() !!}
+                            <div class="col-md-6">
+                                <h3>Banyaknya data masuk (Energi)</h3>
+                                <canvas id="banyaknya_data_masuk_energi" class=""></canvas>
                             </div>
 
-                            <div class="{{ $chart5->options['column_class'] }}">
-                                <h3>{!! $chart5->options['chart_title'] !!}</h3>
-                                {!! $chart5->renderHtml() !!}
+                            <div class="col-md-6">
+                                <h3>Banyaknya data masuk (Berat)</h3>
+                                <canvas id="banyaknya_data_masuk_berat" class=""></canvas>
                             </div>
 
                             <div class="col-md-6">
@@ -90,7 +90,7 @@
 
                             <div class="{{ $settings1['column_class'] }}" style="overflow-x: auto;">
                                 <h3>{{ $settings1['chart_title'] }}</h3>
-                                <table class="table table-bordered table-striped">
+                                <table class="table table-bordered table-striped" id="latest-data-table">
                                     <thead>
                                     <tr>
                                         @foreach($settings1['fields'] as $key => $value)
@@ -128,10 +128,46 @@
 @section('scripts')
     @parent
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
-    {!! $chart4->renderJs() !!}
-    {!! $chart5->renderJs() !!}
 
     <script>
+        const ctxBanyaknyaDataMasukEnergi = document.getElementById("banyaknya_data_masuk_energi").getContext('2d');
+        const banyaknyaDataMasukEnergi = new Chart(ctxBanyaknyaDataMasukEnergi, {
+            type: 'line',
+            data: @json($chart4),
+            options: {
+                tooltips: {
+                    mode: 'point'
+                },
+                height: '300px',
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true
+                        }
+                    }]
+                },
+            }
+        });
+
+        const ctxBanyaknyaDataMasukBerat = document.getElementById("banyaknya_data_masuk_berat").getContext('2d');
+        const banyaknyaDataMasukBerat = new Chart(ctxBanyaknyaDataMasukBerat, {
+            type: 'line',
+            data: @json($chart5),
+            options: {
+                tooltips: {
+                    mode: 'point'
+                },
+                height: '300px',
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true
+                        }
+                    }]
+                },
+            }
+        });
+
         const ctxLatestDataChartEnergi = document.getElementById('latestDataChartEnergi').getContext('2d');
         const latestDataChartEnergi = new Chart(ctxLatestDataChartEnergi, {
             type: 'line',
@@ -196,16 +232,50 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('latest-value').innerText = `${data.value}`;
-                    document.getElementById('latest-timestamp').innerText = `(${data.created_at})`;
+                    document.getElementById('latest-created-at').innerText = `${data.created_at}`;
                     document.getElementById('anomaly-status').innerText = data.is_anomaly ? 'Anomaly Detected' : 'No Anomaly';
                 })
                 .catch(error => console.error('Error fetching latest anomaly data:', error));
         }
 
+        // Function to update the charts and data table
+        function updateChartsAndTable() {
+            fetch('/api/latest-data')
+                .then(response => response.json())
+                .then(data => {
+                    // Update Energi Chart
+                    latestDataChartEnergi.data.labels = data.labelsEnergi;
+                    latestDataChartEnergi.data.datasets[0].data = data.valuesEnergi;
+                    latestDataChartEnergi.update();
+
+                    // Update Berat Chart
+                    latestDataChartBerat.data.labels = data.labelsBerat;
+                    latestDataChartBerat.data.datasets[0].data = data.valuesBerat;
+                    latestDataChartBerat.update();
+
+                    // Update DataTable
+                    const tableBody = document.querySelector('#latest-data-table tbody');
+                    tableBody.innerHTML = '';
+                    data.tableData.forEach(row => {
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td>${row.id}</td>
+                            <td>${row.energi}</td>
+                            <td>${row.berat}</td>
+                            <td>${row.created_at}</td>
+                        `;
+                        tableBody.appendChild(newRow);
+                    });
+                })
+                .catch(error => console.error('Error fetching latest data:', error));
+        }
+
         // Initial fetch
         updateLatestData();
+        updateChartsAndTable();
 
         // Update every 5 seconds
         setInterval(updateLatestData, 5000);
+        setInterval(updateChartsAndTable, 5000);
     </script>
 @endsection

@@ -122,39 +122,51 @@ class HomeController
                 ->{$settings3['aggregate_function'] ?? 'count'}($settings3['aggregate_field'] ?? '*');
         }
 
-        $settings4 = [
-            'chart_title'           => 'Banyaknya data masuk (Energi)',
-            'chart_type'            => 'line',
-            'report_type'           => 'group_by_date',
-            'model'                 => 'App\Models\PembacaanSensor',
-            'group_by_field'        => 'created_at',
-            'group_by_period'       => 'day',
-            'aggregate_function'    => 'count',
-            'filter_field'          => 'created_at',
-            'group_by_field_format' => 'Y-m-d H:i:s',
-            'column_class'          => 'col-md-6',
-            'entries_number'        => '5',
-            'translation_key'       => 'pembacaanSensor',
+        $chart4 = [
+            'labels' => PembacaanSensor::selectRaw('DATE(created_at) as date')
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get()
+                ->pluck('date')
+                ->toArray(),
+            'datasets' => [
+                [
+                    'label' => 'Banyaknya data masuk (Energi)',
+                    'data' => PembacaanSensor::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                        ->groupBy('date')
+                        ->orderBy('date', 'asc')
+                        ->get()
+                        ->pluck('count')
+                        ->toArray(),
+                    'borderColor' => 'rgba(82, 27, 41, 0.2)',
+                    'borderWidth' => 2,
+                    'fill' => false
+                ]
+            ]
         ];
 
-        $chart4 = new LaravelChart($settings4);
-
-        $settings5 = [
-            'chart_title'           => 'Banyaknya data masuk (Berat)',
-            'chart_type'            => 'line',
-            'report_type'           => 'group_by_date',
-            'model'                 => 'App\Models\PembacaanSensor',
-            'group_by_field'        => 'created_at',
-            'group_by_period'       => 'day',
-            'aggregate_function'    => 'count',
-            'filter_field'          => 'created_at',
-            'group_by_field_format' => 'Y-m-d H:i:s',
-            'column_class'          => 'col-md-6',
-            'entries_number'        => '5',
-            'translation_key'       => 'pembacaanSensor',
+        $chart5 = [
+            'labels' => PembacaanSensor::selectRaw('DATE(created_at) as date')
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get()
+                ->pluck('date')
+                ->toArray(),
+            'datasets' => [
+                [
+                    'label' => 'Banyaknya data masuk (Berat)',
+                    'data' => PembacaanSensor::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                        ->groupBy('date')
+                        ->orderBy('date', 'asc')
+                        ->get()
+                        ->pluck('count')
+                        ->toArray(),
+                    'borderColor' => 'rgba(55, 94, 127, 0.2)',
+                    'borderWidth' => 2,
+                    'fill' => false
+                ]
+            ]
         ];
-
-        $chart5 = new LaravelChart($settings5);
 
         $latestEnergiData = PembacaanSensor::orderBy('id', 'desc')
             ->take(20)
@@ -175,11 +187,75 @@ class HomeController
         return view('home', compact('chart4', 'chart5', 'settings1', 'settings2', 'settings3', 'labelsEnergi', 'valuesEnergi', 'labelsBerat', 'valuesBerat'));
     }
 
-    public function getLatestAnomaly()
+    public function latestAnomaly()
     {
-        $response = Http::post('https://pencacah2024.msvc.app/svc/detect-anomalies');
-        $data = $response->json();
+        // Fetch the latest anomaly detection result
+        $anomalyServiceUrl = 'https://pencacah2024.msvc.app/svc/detect-anomalies';
+        $response = Http::post($anomalyServiceUrl);
+        return response()->json($response->json());
+    }
 
-        return response()->json($data);
+    public function getLatestData()
+    {
+        $latestEnergiData = PembacaanSensor::orderBy('id', 'desc')
+            ->take(20)
+            ->get()
+            ->reverse();
+
+        $labelsEnergi = $latestEnergiData->pluck('id')->toArray();
+        $valuesEnergi = $latestEnergiData->pluck('energi')->toArray();
+
+        $latestBeratData = PembacaanSensor::orderBy('id', 'desc')
+            ->take(20)
+            ->get()
+            ->reverse();
+
+        $labelsBerat = $latestBeratData->pluck('id')->toArray();
+        $valuesBerat = $latestBeratData->pluck('berat')->toArray();
+
+        $chart4Data = [
+            'labels' => PembacaanSensor::selectRaw('DATE(created_at) as date')
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get()
+                ->pluck('date')
+                ->toArray(),
+            'data' => PembacaanSensor::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get()
+                ->pluck('count')
+                ->toArray()
+        ];
+
+        $chart5Data = [
+            'labels' => PembacaanSensor::selectRaw('DATE(created_at) as date')
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get()
+                ->pluck('date')
+                ->toArray(),
+            'data' => PembacaanSensor::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get()
+                ->pluck('count')
+                ->toArray()
+        ];
+
+        $tableData = PembacaanSensor::orderBy('id', 'desc')
+            ->take(5)
+            ->get()
+            ->toArray();
+
+        return response()->json([
+            'labelsEnergi' => $labelsEnergi,
+            'valuesEnergi' => $valuesEnergi,
+            'labelsBerat' => $labelsBerat,
+            'valuesBerat' => $valuesBerat,
+            'chart4' => $chart4Data,
+            'chart5' => $chart5Data,
+            'tableData' => $tableData
+        ]);
     }
 }
