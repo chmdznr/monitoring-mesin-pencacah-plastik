@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\PembacaanSensor;
 use LaravelDaily\LaravelCharts\Classes\LaravelChart;
 
 class HomeController
@@ -31,7 +32,7 @@ class HomeController
 
         $settings1['data'] = [];
         if (class_exists($settings1['model'])) {
-            $settings1['data'] = $settings1['model']::latest()
+            $settings1['data'] = $settings1['model']::orderBy('id', 'desc')
                 ->take($settings1['entries_number'])
                 ->get();
         }
@@ -66,11 +67,11 @@ class HomeController
                 } elseif (isset($settings2['filter_period'])) {
                     switch ($settings2['filter_period']) {
                         case 'week': $start = date('Y-m-d', strtotime('last Monday'));
-                        break;
+                            break;
                         case 'month': $start = date('Y-m') . '-01';
-                        break;
+                            break;
                         case 'year': $start = date('Y') . '-01-01';
-                        break;
+                            break;
                     }
                     if (isset($start)) {
                         return $query->where($settings2['filter_field'], '>=', $start);
@@ -106,11 +107,11 @@ class HomeController
                 } elseif (isset($settings3['filter_period'])) {
                     switch ($settings3['filter_period']) {
                         case 'week': $start = date('Y-m-d', strtotime('last Monday'));
-                        break;
+                            break;
                         case 'month': $start = date('Y-m') . '-01';
-                        break;
+                            break;
                         case 'year': $start = date('Y') . '-01-01';
-                        break;
+                            break;
                     }
                     if (isset($start)) {
                         return $query->where($settings3['filter_field'], '>=', $start);
@@ -154,6 +155,22 @@ class HomeController
 
         $chart5 = new LaravelChart($settings5);
 
-        return view('home', compact('chart4', 'chart5', 'settings1', 'settings2', 'settings3'));
+        $latestEnergiData = PembacaanSensor::orderBy('id', 'desc')
+            ->take(20)
+            ->get()
+            ->reverse(); // Reverse the collection to have the oldest first
+
+        $labelsEnergi = $latestEnergiData->pluck('id')->toArray();
+        $valuesEnergi = $latestEnergiData->pluck('energi')->toArray();
+
+        $latestBeratData = PembacaanSensor::orderBy('id', 'desc')
+            ->take(20)
+            ->get()
+            ->reverse(); // Reverse the collection to have the oldest first
+
+        $labelsBerat = $latestBeratData->pluck('id')->toArray();
+        $valuesBerat = $latestBeratData->pluck('berat')->toArray();
+
+        return view('home', compact('chart4', 'chart5', 'settings1', 'settings2', 'settings3', 'labelsEnergi', 'valuesEnergi', 'labelsBerat', 'valuesBerat'));
     }
 }
